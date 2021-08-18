@@ -1,5 +1,8 @@
 import client from '../providers/mongo.providers';
 import Item from '../entities/item';
+import { customAlphabet } from 'nanoid';
+
+const generator = customAlphabet('0123456789', 12);
 
 export default {
   async getById(id: string): Promise<Item> {
@@ -46,9 +49,13 @@ export default {
       .toArray();
   },
 
-  async createItem(item: any): Promise<boolean> {
+  async createItem(item: any): Promise<boolean | string> {
     await client.connect();
 
+    const isOnlyNumbers = /^\d+$/.test(item._id);
+
+    if (!isOnlyNumbers || item._id?.length != 12)
+      return 'The ID can only contain a sequence of 12 numbers.';
     const exists = await client
       .db()
       .collection('items')
@@ -110,5 +117,20 @@ export default {
       .collection('items')
       .updateOne({ _id: item._id }, { $set: { checkOut: new Date() } });
     return true;
+  },
+  async getUnusedBarcode(): Promise<string> {
+    await client.connect();
+
+    let exists = true;
+    let barcode;
+
+    while (exists) {
+      barcode = generator();
+      exists = (await client.db().collection('items').findOne({ _id: barcode }))
+        ? true
+        : false;
+    }
+
+    return barcode;
   },
 };

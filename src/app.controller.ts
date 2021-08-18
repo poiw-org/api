@@ -14,6 +14,7 @@ import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';
 import Items from './repositories/items.repositories';
 import axios from 'axios';
+import Item from './entities/item';
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
@@ -35,7 +36,7 @@ export class AppController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post('/items')
-  async createItem(@Body() body, @Req() request): Promise<boolean> {
+  async createItem(@Body() body, @Req() request): Promise<boolean | string> {
     const { data } = await axios.post(
       `${process.env.AUTH0_ISSUER_URL}userinfo`,
       {},
@@ -128,5 +129,47 @@ export class AppController {
       return false;
 
     return true;
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/barcode')
+  async getUnusedBarcode(@Req() request): Promise<string> {
+    const { data } = await axios.post(
+      `${process.env.AUTH0_ISSUER_URL}userinfo`,
+      {},
+      {
+        headers: {
+          Authorization: request.headers.authorization,
+        },
+      },
+    );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return 'Not Allowed';
+
+    return await Items.getUnusedBarcode();
+  }
+  @UseGuards(AuthGuard('jwt'))
+  @Get('/batch')
+  async getUnusedBarcodeBatch(@Req() request): Promise<string[] | string> {
+    const { data } = await axios.post(
+      `${process.env.AUTH0_ISSUER_URL}userinfo`,
+      {},
+      {
+        headers: {
+          Authorization: request.headers.authorization,
+        },
+      },
+    );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return 'Not Allowed';
+
+    let i = 0;
+    let barcodes: string[] = [];
+
+    while (i != 20) {
+      barcodes.push(await Items.getUnusedBarcode());
+      i++
+    }
+    return barcodes;
   }
 }
