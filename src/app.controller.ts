@@ -46,6 +46,9 @@ export class AppController {
       },
     );
 
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return false;
+
     body.editedBy = body.editedBy || [];
     body.editedBy.push(
       data['https://poiw:eu:auth0:com/app_metadata']?.username || data.email,
@@ -65,6 +68,9 @@ export class AppController {
         },
       },
     );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return false;
+
     body.editedBy =
       data['https://poiw:eu:auth0:com/app_metadata']?.username || data.email;
     return await Items.updateItem(body);
@@ -82,6 +88,8 @@ export class AppController {
         },
       },
     );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return false;
 
     return await Items.deleteItem(body);
   }
@@ -98,7 +106,27 @@ export class AppController {
         },
       },
     );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return false;
 
     return await Items.checkOut(body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('/authCheck')
+  async authCheck(@Req() request): Promise<boolean> {
+    const { data } = await axios.post(
+      `${process.env.AUTH0_ISSUER_URL}userinfo`,
+      {},
+      {
+        headers: {
+          Authorization: request.headers.authorization,
+        },
+      },
+    );
+    if (!data['https://poiw:eu:auth0:com/roles'].includes('warehouse'))
+      return false;
+
+    return true;
   }
 }
