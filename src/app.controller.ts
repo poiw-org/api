@@ -14,7 +14,9 @@ import { AppService } from './app.service';
 import { AuthGuard } from '@nestjs/passport';
 import Items from './repositories/items.repositories';
 import axios from 'axios';
-import Item from './entities/item';
+import { UseInterceptors } from '@nestjs/common';
+import { SentryInterceptor } from './sentry.interceptor';
+@UseInterceptors(SentryInterceptor)
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

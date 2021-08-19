@@ -8,6 +8,8 @@ specifiers:
   '@nestjs/platform-express': ^8.0.0
   '@nestjs/schematics': ^8.0.0
   '@nestjs/testing': ^8.0.0
+  '@sentry/node': ^6.11.0
+  '@sentry/tracing': ^6.11.0
   '@types/express': ^4.17.13
   '@types/jest': ^26.0.24
   '@types/node': ^16.0.0
@@ -45,6 +47,8 @@ dependencies:
   '@nestjs/core': 8.0.6_a4d6c832897073857f471f32139e452f
   '@nestjs/passport': 8.0.1_2c02db70fddcb59258fa0eed39c4b725
   '@nestjs/platform-express': 8.0.6_67f7e5db8827badcb202b1d38f6b1aea
+  '@sentry/node': 6.11.0
+  '@sentry/tracing': 6.11.0
   axios: 0.21.1
   class-validator: 0.13.1
   cnf-barcode: 1.1.5
@@ -946,6 +950,76 @@ packages:
     engines: {node: '>=10.13.0'}
     dev: false
 
+  /@sentry/core/6.11.0:
+    resolution: {integrity: sha512-09TB+f3pqEq8LFahFWHO6I/4DxHo+NcS52OkbWMDqEi6oNZRD7PhPn3i14LfjsYVv3u3AESU8oxSEGbFrr2UjQ==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/hub': 6.11.0
+      '@sentry/minimal': 6.11.0
+      '@sentry/types': 6.11.0
+      '@sentry/utils': 6.11.0
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/hub/6.11.0:
+    resolution: {integrity: sha512-pT9hf+ZJfVFpoZopoC+yJmFNclr4NPqPcl2cgguqCHb69DklD1NxgBNWK8D6X05qjnNFDF991U6t1mxP9HrGuw==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/types': 6.11.0
+      '@sentry/utils': 6.11.0
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/minimal/6.11.0:
+    resolution: {integrity: sha512-XkZ7qrdlGp4IM/gjGxf1Q575yIbl5RvPbg+WFeekpo16Ufvzx37Mr8c2xsZaWosISVyE6eyFpooORjUlzy8EDw==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/hub': 6.11.0
+      '@sentry/types': 6.11.0
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/node/6.11.0:
+    resolution: {integrity: sha512-vbk+V/n7ZIFD8rHPYy03t/gIG5V7LGdjU4qJxVDgNZzticfWPnd2sLgle/r+l60XF6SKW/epG4rnxnBcgPdWaw==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/core': 6.11.0
+      '@sentry/hub': 6.11.0
+      '@sentry/tracing': 6.11.0
+      '@sentry/types': 6.11.0
+      '@sentry/utils': 6.11.0
+      cookie: 0.4.1
+      https-proxy-agent: 5.0.0
+      lru_map: 0.3.3
+      tslib: 1.14.1
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /@sentry/tracing/6.11.0:
+    resolution: {integrity: sha512-9VA1/SY++WeoMQI4K6n/sYgIdRtCu9NLWqmGqu/5kbOtESYFgAt1DqSyqGCr00ZjQiC2s7tkDkTNZb38K6KytQ==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/hub': 6.11.0
+      '@sentry/minimal': 6.11.0
+      '@sentry/types': 6.11.0
+      '@sentry/utils': 6.11.0
+      tslib: 1.14.1
+    dev: false
+
+  /@sentry/types/6.11.0:
+    resolution: {integrity: sha512-gm5H9eZhL6bsIy/h3T+/Fzzz2vINhHhqd92CjHle3w7uXdTdFV98i2pDpErBGNTSNzbntqOMifYEB5ENtZAvcg==}
+    engines: {node: '>=6'}
+    dev: false
+
+  /@sentry/utils/6.11.0:
+    resolution: {integrity: sha512-IOvyFHcnbRQxa++jO+ZUzRvFHEJ1cZjrBIQaNVc0IYF0twUOB5PTP6joTcix38ldaLeapaPZ9LGfudbvYvxkdg==}
+    engines: {node: '>=6'}
+    dependencies:
+      '@sentry/types': 6.11.0
+      tslib: 1.14.1
+    dev: false
+
   /@sinonjs/commons/1.8.3:
     resolution: {integrity: sha512-xkNcLAn/wZaX14RPlwizcKicDk9G3F8m2nU3L7Ukm5zBgTwiT0wsoFAHx9Jq56fJA1z/7uKGtCRu16sOUCLIHQ==}
     dependencies:
@@ -1451,7 +1525,6 @@ packages:
       debug: 4.3.2
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /ajv-formats/2.0.2:
     resolution: {integrity: sha512-Brah4Uo5/U8v76c6euTwtjVFFaVishwnJrQBYpev1JRh4vjA1F4HY3UzQez41YUCszUCXKagG8v6eVRBHV1gkw==}
@@ -2033,6 +2106,11 @@ packages:
 
   /cookie/0.4.0:
     resolution: {integrity: sha512-+Hp8fLp57wnUSt0tY0tHEXh4voZRDnoIrZPqlo3DPiI4y9lwg/jqx+1Om94/W6ZaPDOUbnjOt/99w66zk+l1Xg==}
+    engines: {node: '>= 0.6'}
+    dev: false
+
+  /cookie/0.4.1:
+    resolution: {integrity: sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==}
     engines: {node: '>= 0.6'}
     dev: false
 
@@ -2924,7 +3002,6 @@ packages:
       debug: 4.3.2
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /human-signals/1.1.1:
     resolution: {integrity: sha512-SEQu7vl8KjNL2eoGBLF3+wAjpsNfA9XMlXAYj/3EdaNfAlxKthD1xjEQfGOUhllCGGJVNY34bRr6lPINhNjyZw==}
@@ -3940,6 +4017,10 @@ packages:
     dependencies:
       lodash.clonedeep: 4.5.0
       lru-cache: 4.0.2
+    dev: false
+
+  /lru_map/0.3.3:
+    resolution: {integrity: sha1-tcg1G5Rky9dQM1p5ZQoOwOVhGN0=}
     dev: false
 
   /macos-release/2.5.0:
@@ -5233,7 +5314,6 @@ packages:
 
   /tslib/1.14.1:
     resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
-    dev: true
 
   /tslib/2.1.0:
     resolution: {integrity: sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==}

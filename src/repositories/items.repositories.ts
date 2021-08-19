@@ -51,11 +51,19 @@ export default {
 
   async createItem(item: any): Promise<boolean | string> {
     await client.connect();
-
-    const isOnlyNumbers = /^\d+$/.test(item._id);
-
-    if (!isOnlyNumbers || item._id?.length != 12)
+    const isOnly12Numbers = /^[0-9]{12}$/.test(item._id);
+    
+    if (!isOnly12Numbers)
       return 'The ID can only contain a sequence of 12 numbers.';
+
+      if(item.shelf){
+          item.shelf = item.shelf.toUpperCase();
+          let shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf)
+          if(!shelfIsInCorrectFormat) return "The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB."
+      }
+
+    item._id = item._id.toString();
+
     const exists = await client
       .db()
       .collection('items')
@@ -80,9 +88,9 @@ export default {
 
     if (exists.length == 0) return false;
 
-    if (Array.from(exists.editedBy)?.includes(item.editedBy))
+    if (!Array.from(exists.editedBy)?.includes(item.editedBy))
       item.editedBy = [...Array.from(exists.editedBy), item.editedBy];
-    else item.editedBy = [item.editedBy];
+    else item.editedBy = exists.editedBy;
 
     await client
       .db()
