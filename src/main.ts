@@ -7,6 +7,8 @@ import * as Tracing from "@sentry/tracing";
 
 dotenv.config()
 
+console.log(process.env);
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   Sentry.init({
