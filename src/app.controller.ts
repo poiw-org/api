@@ -4,7 +4,6 @@ import {
   Param,
   Post,
   Patch,
-  Put,
   Delete,
   Req,
   Body,
@@ -61,7 +60,7 @@ export class AppController {
 
   @UseGuards(AuthGuard('jwt'))
   @Patch('/items')
-  async updateItem(@Body() body, @Req() request): Promise<boolean> {
+  async updateItem(@Body() body, @Req() request): Promise<boolean | string> {
     const { data } = await axios.post(
       `${process.env.AUTH0_ISSUER_URL}userinfo`,
       {},
@@ -168,7 +167,7 @@ export class AppController {
     let i = 0;
     let barcodes: string[] = [];
 
-    while (i != 20) {
+    while (i != 15) {
       barcodes.push(await Items.getUnusedBarcode());
       i++
     }

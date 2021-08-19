@@ -78,7 +78,7 @@ export default {
     return true;
   },
 
-  async updateItem(item: any): Promise<boolean> {
+  async updateItem(item: any): Promise<boolean | string> {
     await client.connect();
 
     const exists = await client
@@ -86,7 +86,13 @@ export default {
       .collection('items')
       .findOne({ _id: item._id });
 
-    if (exists.length == 0) return false;
+    if (exists?.length == 0) return false;
+
+    if(item.shelf){
+      item.shelf = item.shelf.toUpperCase();
+      let shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf)
+      if(!shelfIsInCorrectFormat) return "The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB."
+  }
 
     if (!Array.from(exists.editedBy)?.includes(item.editedBy))
       item.editedBy = [...Array.from(exists.editedBy), item.editedBy];
