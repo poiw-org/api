@@ -167,7 +167,7 @@ export class AppController {
     let i = 0;
     let barcodes: string[] = [];
 
-    while (i != 15) {
+    while (i != 21) {
       barcodes.push(await Items.getUnusedBarcode());
       i++
     }
