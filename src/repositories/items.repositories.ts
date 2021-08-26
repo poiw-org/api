@@ -21,20 +21,25 @@ export default {
     );
   },
 
-  async searchItems(query: string): Promise<object[]> {
+  async searchItems(query?: string, shelf?: string): Promise<object[]> {
     await client.connect();
 
     return await client
       .db()
       .collection('items')
-      .find({
-        $or: [
-          { _id: new RegExp(query, 'i') },
-          { title: new RegExp(query, 'i') },
-          { description: new RegExp(query, 'i') },
-          { tags: new RegExp(query, 'i') },
-        ],
-      })
+      .find(
+        shelf
+          ? { shelf: shelf }
+          : {
+              $or: [
+                { _id: new RegExp(query, 'i') },
+                { title: new RegExp(query, 'i') },
+                { description: new RegExp(query, 'i') },
+                { shelf: new RegExp(query, 'i') },
+                { tags: new RegExp(query, 'i') },
+              ],
+            },
+      )
       .toArray();
   },
 
@@ -52,15 +57,16 @@ export default {
   async createItem(item: any): Promise<boolean | string> {
     await client.connect();
     const isOnly12Numbers = /^[0-9]{12}$/.test(item._id);
-    
+
     if (!isOnly12Numbers)
       return 'The ID can only contain a sequence of 12 numbers.';
 
-      if(item.shelf){
-          item.shelf = item.shelf.toUpperCase();
-          let shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf)
-          if(!shelfIsInCorrectFormat) return "The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB."
-      }
+    if (item.shelf) {
+      item.shelf = item.shelf.toUpperCase();
+      const shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf);
+      if (!shelfIsInCorrectFormat)
+        return 'The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB.';
+    }
 
     item._id = item._id.toString();
 
@@ -88,11 +94,12 @@ export default {
 
     if (exists?.length == 0) return false;
 
-    if(item.shelf){
+    if (item.shelf) {
       item.shelf = item.shelf.toUpperCase();
-      let shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf)
-      if(!shelfIsInCorrectFormat) return "The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB."
-  }
+      const shelfIsInCorrectFormat = /^[0-9]{1,2}[A-Z]{1,2}$/.test(item.shelf);
+      if (!shelfIsInCorrectFormat)
+        return 'The shelf referer must start from a number and end in one or two letters. For example 9A or 11C or 2AB.';
+    }
 
     if (!Array.from(exists.editedBy)?.includes(item.editedBy))
       item.editedBy = [...Array.from(exists.editedBy), item.editedBy];

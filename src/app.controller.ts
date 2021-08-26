@@ -32,7 +32,7 @@ export class AppController {
 
   @Post('/search')
   async searchItems(@Body() body): Promise<object[]> {
-    return await Items.searchItems(body.query);
+    return await Items.searchItems(body.query, body.shelf);
   }
 
   @UseGuards(AuthGuard('jwt'))
