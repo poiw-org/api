@@ -17,6 +17,10 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    name: Build & deploy container
+    runs-on: ubuntu-latest
+    steps:
+    - name: deploy
       uses: yamatt/scaleway-serverless-container-deploy-action@main
       with:
           container_id: 762bd6f8-1551-4a9c-bd34-5fa11889677a
