@@ -8,4 +8,4 @@ RUN npm install
 RUN npm run build
 
 
-CMD [ "yarn", "start:dev" ]
+CMD [ "yarn", "start:prod" ]
