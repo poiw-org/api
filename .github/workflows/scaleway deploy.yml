@@ -16,9 +16,9 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  - name: update container with new image version
-    uses: yamatt/scaleway-serverless-container-deploy-action@main
-    with:
-        container_id: 762bd6f8-1551-4a9c-bd34-5fa11889677a
-        secret_key: ${{ secrets.SCALEWAY_SECRET_KEY }}
-        registry_image_url: rg.fr-par.scw.cloud/funcscwpoiwn4n2sdjf/api:latest
+  build:
+      uses: yamatt/scaleway-serverless-container-deploy-action@main
+      with:
+          container_id: 762bd6f8-1551-4a9c-bd34-5fa11889677a
+          secret_key: ${{ secrets.SCALEWAY_SECRET_KEY }}
+          registry_image_url: rg.fr-par.scw.cloud/funcscwpoiwn4n2sdjf/api:latest
