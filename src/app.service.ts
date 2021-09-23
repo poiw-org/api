@@ -147,9 +147,7 @@ export default {
 
     while (exists) {
       barcode = generator();
-      exists = (await client.db().collection('items').findOne({ _id: barcode }))
-        ? true
-        : false;
+      exists = !!(await client.db().collection('items').findOne({_id: barcode}));
     }
 
     return barcode;

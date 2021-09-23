@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import Service from './app.service';
-import axios from 'axios';
 import { UseInterceptors } from '@nestjs/common';
 import { SentryInterceptor } from './sentry.interceptor';
 import checkPermissions from './authz/checkPermissions';
@@ -100,6 +99,7 @@ export class AppController {
       barcodes.push(await Service.getUnusedBarcode());
       i++
     }
+
     return barcodes;
   }
 }
