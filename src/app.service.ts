@@ -8,7 +8,7 @@ export default {
   async getById(id: string): Promise<Item> {
     await client.connect();
     const { _id, title, description, shelf, checkIn, checkOut, editedBy } =
-      await client.db().collection('items').findOne({ _id: id });
+    await client.db('warehouse').collection('items').findOne({ _id: id });
 
     return new Item(
       _id,
@@ -25,7 +25,7 @@ export default {
     await client.connect();
 
     return await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .find(
         shelf
@@ -46,7 +46,7 @@ export default {
   async getLatestItems(): Promise<object[]> {
     await client.connect();
     return await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .find()
       .sort({ checkIn: -1 })
@@ -71,7 +71,7 @@ export default {
     item._id = item._id.toString();
 
     const exists = await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .find({ _id: item._id })
       .toArray();
@@ -80,7 +80,7 @@ export default {
 
     item.checkIn = new Date();
 
-    await client.db().collection('items').insert(item);
+    await client.db('warehouse').collection('items').insert(item);
     return true;
   },
 
@@ -88,7 +88,7 @@ export default {
     await client.connect();
 
     const exists = await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .findOne({ _id: item._id });
 
@@ -106,7 +106,7 @@ export default {
     else item.editedBy = exists.editedBy;
 
     await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .updateOne({ _id: item._id }, { $set: item });
     return true;
@@ -115,7 +115,7 @@ export default {
   async deleteItem(item: any): Promise<boolean> {
     await client.connect();
 
-    await client.db().collection('items').deleteOne({ _id: item._id });
+    await client.db('warehouse').collection('items').deleteOne({ _id: item._id });
     return true;
   },
 
@@ -123,7 +123,7 @@ export default {
     await client.connect();
 
     const exists = await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .findOne({ _id: item._id });
 
@@ -134,7 +134,7 @@ export default {
     else item.editedBy = [item.editedBy];
 
     await client
-      .db()
+      .db('warehouse')
       .collection('items')
       .updateOne({ _id: item._id }, { $set: { checkOut: new Date() } });
     return true;
@@ -147,7 +147,7 @@ export default {
 
     while (exists) {
       barcode = generator();
-      exists = !!(await client.db().collection('items').findOne({_id: barcode}));
+      exists = !!(await client.db('warehouse').collection('items').findOne({_id: barcode}));
     }
 
     return barcode;
