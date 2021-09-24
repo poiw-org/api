@@ -15,13 +15,13 @@ export class Fm1Controller {
     @Post('/verify/:email')
     async verify_code(@Body() body, @Param('email') email): Promise<object | string> {
         // verify code and return token, previous application data
-        return Fm1Service.verifyEmail(email, body.code);
+        return Fm1Service.verifyEmail(email, body.verificationCode);
     }
 
     @Post('/apply/:token')
     async apply(@Body() body, @Param('token') token): Promise<boolean | string> {
         // (body has application data) return success or failed
-        return Fm1Service.apply(token, body.application);
+        return Fm1Service.apply(token, body);
     }
 
   @UseGuards(AuthGuard('jwt'))
