@@ -69,13 +69,14 @@ export default {
         if (!email)
             return 'Δεν βρέθηκε το email.';
 
-        if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
-            return 'Το email δεν είναι έγκυρο.';
+        // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
+        //     return 'Το email δεν είναι έγκυρο.';
 
         let verificationCode = code_generator();
 
         await client.connect();
-        await client.db('fm1').collection('auth').updateOne({email}, {email, verificationCode, otp_ts: Date.now()}, {upsert: true});
+        await client.db('fm1').collection('auth').updateOne({email}, {
+        $set:{email, verificationCode, otp_ts: Date.now()}}, {upsert: true});
 
         const smtpClient = new SMTPClient({
             user: smtp_username,
@@ -97,6 +98,7 @@ export default {
     },
 
     async verifyEmail(email: string, verificationCode: string): Promise<object | string> {
+        await client.connect();
         // verify code and return token, previous application data
         if(!email)
             return 'Δεν βρέθηκε το email';
@@ -110,12 +112,12 @@ export default {
         if(authData.token)
             return 'Το email έχει ήδη κάνει ταυτοποίηση.';
 
-        // Compare verification codes - Check for timestamp
+        // Compare verification codes - Check for timestampΟ κωδικός επιβεβαίωσης σου για το studio FM1 είναι: 193797
         if(verificationCode !== authData.verificationCode || Date.now() - authData.otp_ts > 10 * 60 * 1000)
             return 'Ο κωδικός δεν είναι έγκυρος.';
 
         authData.token = token_generator();
-        await client.db('fm1').collection('auth').updateOne({email}, {token: authData.token, token_ts: Date.now()});
+        await client.db('fm1').collection('auth').updateOne({email}, { $set: {token: authData.token, token_ts: Date.now()}});
 
         let application = await client.db('fm1').collection('applications').findOne({email})
         return { token: authData.token, application }
@@ -128,8 +130,8 @@ export default {
         let artistsList = application.artistsList
 
         if(!email) return 'Δεν βρέθηκε το email';
-        if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
-            return 'Το email δεν είναι έγκυρο.';
+        // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
+        //     return 'Το email δεν είναι έγκυρο.';
         if(!mobile) return 'Δεν βρέθηκε αριθμός τηλεφώνου.';
         if(!fullName) return 'δεν βρέθηκε ονοματεπώνυμο.';
         if(!artistsList) return 'δεν βρέθηκε η λίστα με τους καλλιτέχνες.';
@@ -142,7 +144,7 @@ export default {
         if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
             return 'Το token δεν είναι έγκυρο.';
 
-        await client.db('fm1').collection('applications').updateOne({email}, {email, mobile, fullName, artistsList}, {upsert: true})
+        await client.db('fm1').collection('applications').updateOne({email}, {$set: {email, mobile, fullName, artistsList}}, {upsert: true})
 
         return true
     }
