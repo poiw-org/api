@@ -6,6 +6,7 @@ import * as cloudBucket from "@google-cloud/storage"
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
+const filename_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32);
 
 export default {
     async getApplications(): Promise<object[]> {
@@ -144,15 +145,43 @@ export default {
         if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
             return 'Το token δεν είναι έγκυρο.';
 
+        const gcs = new cloudBucket.Storage({
+            projectId: process.env.GCS_PROJECT_ID,
+            keyFilename: process.env.GCS_KEY_FILE_NAME
+        })
+
+        let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0]
+
+        // Define bucket.
+        let myBucket = gcs.bucket(process.env.GCS_BUCKET);
+        // Define file & file name.
+        let filename = filename_generator() + '.' + contentType?.split('/')[1]
+        let file = myBucket.file(filename);
+        // Pipe the 'bufferStream' into a 'file.createWriteStream' method.
         let bufferStream = new stream.PassThrough();
         bufferStream.end(Buffer.from(artistsList.split(',')[1], 'base64'));
 
-        const gcs = new cloudBucket.Storage({
-            projectId: 'grape-spaceship-123',
-            keyFilename: '/path/to/keyfile.json'
+        let writeStream = file.createWriteStream({
+            metadata: {
+                contentType: contentType,
+                metadata: { custom: 'metadata' }
+            },
+            public: true,
+            validation: "md5"
         })
 
-        await client.db('fm1').collection('applications').updateOne({email}, { $set: {email, mobile, fullName, artistsList} }, {upsert: true});
+        bufferStream.pipe(writeStream)
+          .on('error', function(err) {console.log(err);})
+          .on('finish', function() {});
+
+        await client.db('fm1').collection('applications').updateOne({email}, {
+            $set: {
+                email,
+                mobile,
+                fullName,
+                artistsList: process.env.GCS_STORAGE_URL + filename
+            }
+        }, {upsert: true});
         return true;
     },
 
