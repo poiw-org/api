@@ -6,36 +6,36 @@ import Fm1Service from './fm1.service';
 @Controller('fm1')
 export class Fm1Controller {
 
-    @Get('/verify/:email')
-    async verify(@Param('email') email): Promise<boolean | string> {
+    @Post('/sendVerificationCode')
+    async sendVerificationCode(@Body() body): Promise<boolean | string> {
         // send verification code to email
-        return Fm1Service.sendVerificationCode(email);
+        return Fm1Service.sendVerificationCode(body.email);
     }
 
-    @Post('/verify/:email')
-    async verify_code(@Body() body, @Param('email') email): Promise<object | string> {
-        // verify code and return token, previous application data
-        return Fm1Service.verifyEmail(email, body.verificationCode);
+    @Post('/verify')
+    async verify_code(@Body() body): Promise<object | string> {
+        // verify code and return token
+        return Fm1Service.verifyEmail(body.email, body.verificationCode);
     }
 
-    @Get('/logout/:token')
-    async logout(@Body() body, @Param('token') token): Promise<boolean>{
-       return Fm1Service.deleteAuth(body.email, token);
+    @Post('/logout')
+    async logout(@Body() body): Promise<boolean>{
+        return Fm1Service.deleteAuth(body.email, body.token);
     }
 
-    @Get('/previousApplication/:token')
-    async previousApplication(@Body() body, @Param('token') token): Promise<object | string>{
-      return Fm1Service.getPreviousApplication(body.email, token);
+    @Post('/previousApplication')
+    async previousApplication(@Body() body, ): Promise<object | string>{
+        return Fm1Service.getPreviousApplication(body.email, body.token);
     }
 
 
-    @Post('/apply/:token')
-    async apply(@Body() body, @Param('token') token): Promise<boolean | string> {
+    @Post('/apply')
+    async apply(@Body() body): Promise<boolean | string> {
         // (body has application data) return success or failed
-        return Fm1Service.apply(token, body);
+        return Fm1Service.apply(body.token, body.application);
     }
 
-  @UseGuards(AuthGuard('jwt'))
+    @UseGuards(AuthGuard('jwt'))
     @Get('/admin/auth')
     async admin_auth(@Req() request): Promise<boolean | string> {
         const user = await checkPermissions(request, ['fm1_registrations']);
@@ -55,7 +55,7 @@ export class Fm1Controller {
     async admin_applications_edit(@Body() body, @Req() request, @Param('id') id): Promise<boolean | string> {
         const user = await checkPermissions(request, ['fm1_registrations']);
         if (!user) return 'Unauthorized';
-        body.editedBy = user
+        // body.editedBy = user
         return Fm1Service.editApplication(body);
     }
 
@@ -64,7 +64,7 @@ export class Fm1Controller {
     async admin_applications_delete(@Body() body, @Req() request, @Param('id') id): Promise<boolean | string> {
         const user = await checkPermissions(request, ['fm1_registrations']);
         if (!user) return 'Unauthorized';
-        body.editedBy = user
+        // body.editedBy = user
         return Fm1Service.deleteApplication(body);
     }
 

@@ -1,0 +1,45 @@
+[
+  {
+    "function": "sendVerificationCode",
+    "requestTypes": "POST",
+    "url": "/sendVerificationCode",
+    "body": {"email": ""},
+    "return": "boolean | string error",
+    "functionality": "Send a verification code with smtp to email."
+  },
+  {
+    "function": "verify_code",
+    "requestTypes": "POST",
+    "url": "/verify",
+    "body": {"email": "", "verificationCode": ""},
+    "return": "object with token | string error",
+    "functionality": "Send a verification code with smtp to email."
+  },
+  {
+    "function": "logout",
+    "requestTypes": "POST",
+    "url": "/logout",
+    "body": {"email": "", "token": ""},
+    "return": "boolean",
+    "functionality": "Deletes auth data from db."
+  },
+  {
+    "function": "previousApplication",
+    "requestTypes": "POST",
+    "url": "/previousApplication",
+    "body": {"email": "", "token": ""},
+    "return": "object application | string error",
+    "functionality": "Returns the previous application."
+  },
+  {
+    "function": "apply",
+    "requestTypes": "POST",
+    "url": "/apply",
+    "body": {
+      "email": "",
+      "application": {"email": "", "mobile": "", "fullName": "", "artistsList": ""}
+    },
+    "return": "boolean | string error",
+    "functionality": "Adds a new application in the db (overrides the old one if it exists)."
+  }
+]
