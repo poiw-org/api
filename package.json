@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@google-cloud/storage": "^5.14.3",
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0",
     "@nestjs/passport": "^8.0.1",
@@ -31,6 +32,7 @@
     "class-validator": "^0.13.1",
     "cnf-barcode": "^1.1.5",
     "dotenv": "^10.0.0",
+    "emailjs": "3.6.0",
     "jwks-rsa": "^2.0.4",
     "mongodb": "^4.1.0",
     "nanoid": "^3.1.25",
@@ -40,8 +42,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
-    "urlencode": "^1.1.0",
-    "emailjs": "3.6.0"
+    "urlencode": "^1.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.0.0",

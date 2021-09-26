@@ -1,14 +1,11 @@
 import client from '../providers/mongo.providers';
 import { customAlphabet } from 'nanoid';
 import { SMTPClient } from "emailjs"
-import {log} from "util";
+import * as stream from 'stream';
+import * as cloudBucket from "@google-cloud/storage"
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
-
-const smtp_username='prism@poiw.org'
-const smtp_password='^q4jxZ53GzRVH8Ux'
-const smtp_host='mailer.poiw.org'
 
 export default {
     async getApplications(): Promise<object[]> {
@@ -80,9 +77,9 @@ export default {
         $set:{email, verificationCode, otp_ts: Date.now()}}, {upsert: true});
 
         const smtpClient = new SMTPClient({
-            user: smtp_username,
-            password: smtp_password,
-            host: smtp_host,
+            user: process.env.SMTP_USERNAME,
+            password: process.env.SMTP_PASSWORD,
+            host: process.env.SMTP_HOST,
             ssl: true,
         });
 
@@ -130,7 +127,7 @@ export default {
         let email = application.email
         let mobile = application.mobile;
         let fullName = application.fullName;
-        let artistsList = application.artistsList;
+        let artistsList = application.artistsList; // base64
 
         if(!email) return 'Δεν βρέθηκε το email';
         // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
@@ -146,6 +143,14 @@ export default {
         // Compare verification codes - Check for timestamp
         if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
             return 'Το token δεν είναι έγκυρο.';
+
+        let bufferStream = new stream.PassThrough();
+        bufferStream.end(Buffer.from(artistsList.split(',')[1], 'base64'));
+
+        const gcs = new cloudBucket.Storage({
+            projectId: 'grape-spaceship-123',
+            keyFilename: '/path/to/keyfile.json'
+        })
 
         await client.db('fm1').collection('applications').updateOne({email}, { $set: {email, mobile, fullName, artistsList} }, {upsert: true});
         return true;
