@@ -1,12 +1,18 @@
 import client from '../providers/mongo.providers';
-import { customAlphabet } from 'nanoid';
-import { SMTPClient } from "emailjs"
-import * as stream from 'stream';
-import * as cloudBucket from "@google-cloud/storage"
+import {customAlphabet} from 'nanoid';
+import {SMTPClient} from "emailjs"
+// import {uploadAndGetPublicFile} from "../providers/storage"
+import {Storage} from "@google-cloud/storage";
+import * as stream from "stream";
+import {ApplicationStates} from "./applicationStates";
+import {Readable} from "stream";
+import {log} from "util";
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
-const filename_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32);
+const filename_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 64);
+
+const token_expires = 10 * 60 * 60 * 1000
 
 export default {
     async getApplications(): Promise<object[]> {
@@ -74,8 +80,8 @@ export default {
         let verificationCode = code_generator();
 
         await client.connect();
-        await client.db('fm1').collection('auth').updateOne({email}, {
-        $set:{email, verificationCode, otp_ts: Date.now()}}, {upsert: true});
+        await client.db('fm1').collection('auth').deleteMany({email})
+        await client.db('fm1').collection('auth').insertOne({email, verificationCode, otp_ts: Date.now()});
 
         const smtpClient = new SMTPClient({
             user: process.env.SMTP_USERNAME,
@@ -84,14 +90,14 @@ export default {
             ssl: true,
         });
 
-        if(process.env.NODE_ENV === "production") smtpClient.send(
-          {
+        if(process.env.NODE_ENV != "development")
+            smtpClient.send({
               text: `Ο κωδικός επιβεβαίωσης σου για το studio FM1 είναι: ${verificationCode}\n`,
               //@ts-ignore
               from: 'FM1 <noreply@poiw.org>',
               to: email,
               subject: 'Επιβεβαίωση email για το studio FM1',
-          }, async (err, message) => {});
+          }, async (err, message) => console.log(err));
         else console.log(`Ο κωδικός επιβεβαίωσης για το email ${email} είναι ${verificationCode}`);
 
         return true
@@ -100,31 +106,31 @@ export default {
     async verifyEmail(email: string, verificationCode: string): Promise<object | string> {
         await client.connect();
         // verify code and return token, previous application data
-        if(!email)
-            return 'Δεν βρέθηκε το email';
+        if(!email) return 'Δεν βρέθηκε το email';
+        if(!verificationCode) return 'Δεν βρέθηκε το verificationCode';
 
-        if(!verificationCode)
-            return 'Δεν βρέθηκε το verificationCode';
-
-        let authData = await client.db('fm1').collection('auth').findOne({email})
+        let authData = await client.db('fm1').collection('auth').findOne({email});
         if(!authData) return 'Το email δεν είναι καταχωρημένο.';
-
-        if(authData.token)
-            await client.db('fm1').collection('auth').deleteMany({email})
 
         // Compare verification codes - Check for timestamp
         if(verificationCode !== authData.verificationCode || Date.now() - authData.otp_ts > 10 * 60 * 1000)
             return 'Ο κωδικός δεν είναι έγκυρος.';
 
-        await client.db('fm1').collection('auth').deleteMany({email})
+        if(authData.token)
+            return {token: authData.token};
 
-        authData.token = token_generator();
-        await client.db('fm1').collection('auth').updateOne({email}, { $set: {token: authData.token, token_ts: Date.now()}});
+        await client.db('fm1').collection('auth').deleteMany({email});
 
-        return { token: authData.token }
+        let token = token_generator();
+        let token_ts = Date.now();
+        await client.db('fm1').collection('auth').insertOne({email, token, token_ts});
+
+        return {token, expires: token_ts + token_expires};
     },
 
     async apply(token: string, application: any): Promise<boolean | string> {
+        await client.connect();
+
         let email = application.email
         let mobile = application.mobile;
         let fullName = application.fullName;
@@ -142,44 +148,50 @@ export default {
         if(!authData) return 'Το email δεν είναι καταχωρημένο.';
 
         // Compare verification codes - Check for timestamp
-        if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
+        if(token !== authData.token || Date.now() - authData.token_ts > token_expires)
             return 'Το token δεν είναι έγκυρο.';
 
-        const gcs = new cloudBucket.Storage({
-            projectId: process.env.GCS_PROJECT_ID,
-            keyFilename: process.env.GCS_KEY_FILE_NAME
-        })
-
         let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0]
-
-        // Define bucket.
-        let myBucket = gcs.bucket(process.env.GCS_BUCKET);
-        // Define file & file name.
         let filename = filename_generator() + '.' + contentType?.split('/')[1]
-        let file = myBucket.file(filename);
-        // Pipe the 'bufferStream' into a 'file.createWriteStream' method.
-        let bufferStream = new stream.PassThrough();
-        bufferStream.end(Buffer.from(artistsList.split(',')[1], 'base64'));
 
-        let writeStream = file.createWriteStream({
+        // let fileURL = await uploadAndGetPublicFile(filename,artistsList.split(',')[1],contentType);
+        const storage = new Storage(process.env.NODE_ENV === "development" ? {
+            projectId: process.env.GCS_PROJECT_ID,
+            keyFilename: "./poiw-290908-c8bd5b74fe42.json"
+        }:{});
+        const myBucket = storage.bucket(process.env.GCS_BUCKET);
+
+        const file = myBucket.file(`fm1-applicants/${filename}`);
+
+        const fileOptions = {
+            metadata: { contentType: contentType },
+        }
+            const base64EncodedString = artistsList.replace(/^data:\w+\/\w+;base64,/, '')
+        var bufferStream = new stream.PassThrough();
+        bufferStream.end(Buffer.from(base64EncodedString, 'base64'));
+        await bufferStream.pipe(file.createWriteStream({
             metadata: {
                 contentType: contentType,
-                metadata: { custom: 'metadata' }
+                metadata: {
+                    custom: 'metadata'
+                }
             },
             public: true,
-            validation: "md5"
-        })
+        }))
+            .on('error', (err) => console.error(err))
+            .on('finish', ()=> console.log("Upload complete"));
 
-        bufferStream.pipe(writeStream)
-          .on('error', function(err) {console.log(err);})
-          .on('finish', function() {});
+
+
+
 
         await client.db('fm1').collection('applications').updateOne({email}, {
             $set: {
                 email,
                 mobile,
                 fullName,
-                artistsList: process.env.GCS_STORAGE_URL + filename
+                applicationStatus: ApplicationStates.PENDING_REVIEW,
+                artistsList: process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename
             }
         }, {upsert: true});
         return true;
@@ -191,6 +203,8 @@ export default {
     },
 
     async getPreviousApplication(email: string, token: string): Promise<object | string> {
+        await client.connect();
+
         let authData = await client.db('fm1').collection('auth').findOne({email})
         if(!authData) return 'Το email δεν είναι καταχωρημένο.';
 

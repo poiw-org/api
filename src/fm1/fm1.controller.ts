@@ -24,7 +24,7 @@ export class Fm1Controller {
     }
 
     @Post('/previousApplication')
-    async previousApplication(@Body() body, ): Promise<object | string>{
+    async previousApplication(@Body() body): Promise<object | string>{
         return Fm1Service.getPreviousApplication(body.email, body.token);
     }
 
