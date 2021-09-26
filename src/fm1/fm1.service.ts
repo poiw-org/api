@@ -1,6 +1,7 @@
 import client from '../providers/mongo.providers';
 import { customAlphabet } from 'nanoid';
 import { SMTPClient } from "emailjs"
+import {log} from "util";
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
@@ -85,7 +86,7 @@ export default {
             ssl: true,
         });
 
-        smtpClient.send(
+        if(process.env.NODE_ENV === "production") smtpClient.send(
           {
               text: `Ο κωδικός επιβεβαίωσης σου για το studio FM1 είναι: ${verificationCode}\n`,
               //@ts-ignore
@@ -93,6 +94,7 @@ export default {
               to: email,
               subject: 'Επιβεβαίωση email για το studio FM1',
           }, async (err, message) => {});
+        else console.log(`Ο κωδικός επιβεβαίωσης για το email ${email} είναι ${verificationCode}`);
 
         return true
     },
@@ -110,17 +112,19 @@ export default {
         if(!authData) return 'Το email δεν είναι καταχωρημένο.';
 
         if(authData.token)
-            return 'Το email έχει ήδη κάνει ταυτοποίηση.';
+            await client.db('fm1').collection('auth').deleteMany({email})
 
-        // Compare verification codes - Check for timestampΟ κωδικός επιβεβαίωσης σου για το studio FM1 είναι: 193797
+        // Compare verification codes - Check for timestamp
         if(verificationCode !== authData.verificationCode || Date.now() - authData.otp_ts > 10 * 60 * 1000)
             return 'Ο κωδικός δεν είναι έγκυρος.';
+
+        await client.db('fm1').collection('auth').deleteMany({email})
 
         authData.token = token_generator();
         await client.db('fm1').collection('auth').updateOne({email}, { $set: {token: authData.token, token_ts: Date.now()}});
 
         let application = await client.db('fm1').collection('applications').findOne({email})
-        return { token: authData.token, application }
+        return { token: authData.token, expires: new Date().getTime() + 6 * 60 * 60 * 1000, application }
     },
 
     async apply(token: string, application: any): Promise<boolean | string> {

@@ -18,6 +18,17 @@ export class Fm1Controller {
         return Fm1Service.verifyEmail(email, body.verificationCode);
     }
 
+    // @Get('/logout/:token')
+    // async logout(): Promise<void>{
+    //    deletes token from database
+    // }
+
+    // @Get('/previousApplication/:token')
+    // async previousApplication(): Promise<void>{
+    //    returns previous application from database
+    // }
+
+
     @Post('/apply/:token')
     async apply(@Body() body, @Param('token') token): Promise<boolean | string> {
         // (body has application data) return success or failed
