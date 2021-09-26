@@ -18,15 +18,15 @@ export class Fm1Controller {
         return Fm1Service.verifyEmail(email, body.verificationCode);
     }
 
-    // @Get('/logout/:token')
-    // async logout(): Promise<void>{
-    //    deletes token from database
-    // }
+    @Get('/logout/:token')
+    async logout(@Body() body, @Param('token') token): Promise<boolean>{
+       return Fm1Service.deleteAuth(body.email, token);
+    }
 
-    // @Get('/previousApplication/:token')
-    // async previousApplication(): Promise<void>{
-    //    returns previous application from database
-    // }
+    @Get('/previousApplication/:token')
+    async previousApplication(@Body() body, @Param('token') token): Promise<object | string>{
+      return Fm1Service.getPreviousApplication(body.email, token);
+    }
 
 
     @Post('/apply/:token')

@@ -123,15 +123,14 @@ export default {
         authData.token = token_generator();
         await client.db('fm1').collection('auth').updateOne({email}, { $set: {token: authData.token, token_ts: Date.now()}});
 
-        let application = await client.db('fm1').collection('applications').findOne({email})
-        return { token: authData.token, expires: new Date().getTime() + 6 * 60 * 60 * 1000, application }
+        return { token: authData.token }
     },
 
     async apply(token: string, application: any): Promise<boolean | string> {
         let email = application.email
-        let mobile = application.mobile
-        let fullName = application.fullName
-        let artistsList = application.artistsList
+        let mobile = application.mobile;
+        let fullName = application.fullName;
+        let artistsList = application.artistsList;
 
         if(!email) return 'Δεν βρέθηκε το email';
         // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
@@ -148,9 +147,25 @@ export default {
         if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
             return 'Το token δεν είναι έγκυρο.';
 
-        await client.db('fm1').collection('applications').updateOne({email}, {$set: {email, mobile, fullName, artistsList}}, {upsert: true})
+        await client.db('fm1').collection('applications').updateOne({email}, { $set: {email, mobile, fullName, artistsList} }, {upsert: true});
+        return true;
+    },
 
+    async deleteAuth(email: string, token: string): Promise<boolean> {
+        await client.db('fm1').collection('auth').deleteOne({email, token})
         return true
+    },
+
+    async getPreviousApplication(email: string, token: string): Promise<object | string> {
+        let authData = await client.db('fm1').collection('auth').findOne({email})
+        if(!authData) return 'Το email δεν είναι καταχωρημένο.';
+
+        // Compare verification codes - Check for timestamp
+        if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
+            return 'Το token δεν είναι έγκυρο.';
+
+        let application = await client.db('fm1').collection('applications').findOne({email});
+        return { application };
     }
 
 }
