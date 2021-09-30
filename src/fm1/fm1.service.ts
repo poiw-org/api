@@ -5,8 +5,9 @@ import {SMTPClient} from "emailjs"
 import {Storage} from "@google-cloud/storage";
 import * as stream from "stream";
 import {ApplicationStates} from "./applicationStates";
-import {Readable} from "stream";
-import {log} from "util";
+
+import { HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
@@ -103,7 +104,7 @@ export default {
         return true
     },
 
-    async verifyEmail(email: string, verificationCode: string): Promise<object | string> {
+    async verifyEmail(email: string, verificationCode: string, response: Response): Promise<object | string> {
         await client.connect();
         // verify code and return token, previous application data
         if(!email) return 'Δεν βρέθηκε το email';
@@ -128,7 +129,7 @@ export default {
         return {token, expires: token_ts + token_expires};
     },
 
-    async apply(token: string, application: any): Promise<boolean | string> {
+    async apply(token: string, application: any, response: Response): Promise<Response | string> {
         await client.connect();
 
         let email = application.email
@@ -139,16 +140,16 @@ export default {
         if(!email) return 'Δεν βρέθηκε το email';
         // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
         //     return 'Το email δεν είναι έγκυρο.';
-        if(!mobile) return 'Δεν βρέθηκε αριθμός τηλεφώνου.';
-        if(!fullName) return 'δεν βρέθηκε ονοματεπώνυμο.';
-        if(!artistsList) return 'δεν βρέθηκε η λίστα με τους καλλιτέχνες.';
-        if(!token) return 'Δεν βρέθηκε το token';
+        if(!mobile) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν βρέθηκε αριθμός τηλεφώνου.');
+        if(!fullName) return response.status(HttpStatus.NOT_ACCEPTABLE).send('δεν βρέθηκε ονοματεπώνυμο.');
+        if(!artistsList) return response.status(HttpStatus.NOT_ACCEPTABLE).send('δεν βρέθηκε η λίστα με τους καλλιτέχνες.');
+        if(!token) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν βρέθηκε το token');
 
         let authData = await client.db('fm1').collection('auth').findOne({email})
-        if(!authData) return 'Το email δεν είναι καταχωρημένο.';
+        if(!authData) return response.status(HttpStatus.UNAUTHORIZED).send('Το email δεν είναι καταχωρημένο.');
 
         // Compare verification codes - Check for timestamp
-        if(token !== authData.token || Date.now() - authData.token_ts > token_expires)
+        if(!token || token !== authData.token || Date.now() - authData.token_ts > token_expires)
             return 'Το token δεν είναι έγκυρο.';
 
         let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0]
@@ -166,7 +167,7 @@ export default {
         const fileOptions = {
             metadata: { contentType: contentType },
         }
-            const base64EncodedString = artistsList.replace(/^data:\w+\/\w+;base64,/, '')
+        const base64EncodedString = artistsList.replace(/^data:\w+\/\w+;base64,/, '')
         var bufferStream = new stream.PassThrough();
         bufferStream.end(Buffer.from(base64EncodedString, 'base64'));
         await bufferStream.pipe(file.createWriteStream({
@@ -194,7 +195,7 @@ export default {
                 artistsList: process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename
             }
         }, {upsert: true});
-        return true;
+        return "OK";
     },
 
     async deleteAuth(email: string, token: string): Promise<boolean> {
@@ -209,7 +210,7 @@ export default {
         if(!authData) return 'Το email δεν είναι καταχωρημένο.';
 
         // Compare verification codes - Check for timestamp
-        if(token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
+        if(!token || token !== authData.token || Date.now() - authData.token_ts > 6 * 60 * 60 * 1000)
             return 'Το token δεν είναι έγκυρο.';
 
         let application = await client.db('fm1').collection('applications').findOne({email});

@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import checkPermissions from '../authz/checkPermissions';
 import Fm1Service from './fm1.service';
+import { Response } from 'express';
 
 @Controller('fm1')
 export class Fm1Controller {
@@ -13,9 +14,9 @@ export class Fm1Controller {
     }
 
     @Post('/verify')
-    async verify_code(@Body() body): Promise<object | string> {
+    async verify_code(@Body() body, @Res() response: Response): Promise<object | string> {
         // verify code and return token
-        return Fm1Service.verifyEmail(body.email, body.verificationCode);
+        return Fm1Service.verifyEmail(body.email, body.verificationCode, response);
     }
 
     @Post('/logout')
@@ -30,9 +31,9 @@ export class Fm1Controller {
 
 
     @Post('/apply')
-    async apply(@Body() body): Promise<boolean | string> {
+    async apply(@Body() body, @Res() response: Response): Promise<any> {
         // (body has application data) return success or failed
-        return Fm1Service.apply(body.token, body.application);
+        return Fm1Service.apply(body.token, body.application, response);
     }
 
     @UseGuards(AuthGuard('jwt'))
