@@ -14,9 +14,9 @@ export class Fm1Controller {
     }
 
     @Post('/verify')
-    async verify_code(@Body() body, @Res() response: Response): Promise<object | string> {
+    async verify_code(@Body() body): Promise<object | string> {
         // verify code and return token
-        return Fm1Service.verifyEmail(body.email, body.verificationCode, response);
+        return Fm1Service.verifyEmail(body.email, body.verificationCode);
     }
 
     @Post('/logout')

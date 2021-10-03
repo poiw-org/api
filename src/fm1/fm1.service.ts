@@ -11,7 +11,7 @@ import { Response } from 'express';
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
-const filename_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 64);
+const filename_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 32);
 
 const token_expires = 10 * 60 * 60 * 1000
 
@@ -104,7 +104,7 @@ export default {
         return true
     },
 
-    async verifyEmail(email: string, verificationCode: string, response: Response): Promise<object | string> {
+    async verifyEmail(email: string, verificationCode: string): Promise<object | string> {
         await client.connect();
         // verify code and return token, previous application data
         if(!email) return 'Δεν βρέθηκε το email';
@@ -121,11 +121,9 @@ export default {
             return {token: authData.token};
 
         await client.db('fm1').collection('auth').deleteMany({email});
-
         let token = token_generator();
         let token_ts = Date.now();
         await client.db('fm1').collection('auth').insertOne({email, token, token_ts});
-
         return {token, expires: token_ts + token_expires};
     },
 
@@ -136,14 +134,18 @@ export default {
         let mobile = application.mobile;
         let fullName = application.fullName;
         let artistsList = application.artistsList; // base64
+        let musicGenre = application.musicGenre;
+        let school = application.school;
 
         if(!email) return 'Δεν βρέθηκε το email';
         // if(!(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(email)))
         //     return 'Το email δεν είναι έγκυρο.';
         if(!mobile) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν βρέθηκε αριθμός τηλεφώνου.');
-        if(!fullName) return response.status(HttpStatus.NOT_ACCEPTABLE).send('δεν βρέθηκε ονοματεπώνυμο.');
-        if(!artistsList) return response.status(HttpStatus.NOT_ACCEPTABLE).send('δεν βρέθηκε η λίστα με τους καλλιτέχνες.');
-        if(!token) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν βρέθηκε το token');
+        if(!fullName) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν βρέθηκε ονοματεπώνυμο.');
+        if(!artistsList) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Πρέπει να ανεβάσεις τη λίστα με τους καλλιτέχνες.');
+        if(!token) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Δεν ήταν δυνατή η ταυτοποίηση σου. Προσπάθησε να ανανεώσεις τη σελίδα και προσπάθησε πάλι.');
+        if(!school) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Πρέπει να δηλώσεις σε ποιό τμήμα σπουδάζεις.');
+        if(!musicGenre) return response.status(HttpStatus.NOT_ACCEPTABLE).send('Πρέπει να δηλώσεις ποιο είδος μουσικής θέλεις να παίζεις (κατα κύριο λόγο) στον σταθμό.');
 
         let authData = await client.db('fm1').collection('auth').findOne({email})
         if(!authData) return response.status(HttpStatus.UNAUTHORIZED).send('Το email δεν είναι καταχωρημένο.');
@@ -195,7 +197,7 @@ export default {
                 artistsList: process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename
             }
         }, {upsert: true});
-        return "OK";
+        return response.status(200).send("OK");
     },
 
     async deleteAuth(email: string, token: string): Promise<boolean> {
