@@ -89,6 +89,7 @@ export default {
             password: process.env.SMTP_PASSWORD,
             host: process.env.SMTP_HOST,
             ssl: true,
+            timeout: 999999999999999999
         });
 
         if(process.env.NODE_ENV != "development")
@@ -181,12 +182,6 @@ export default {
             },
             public: true,
         }))
-            .on('error', (err) => console.error(err))
-            .on('finish', ()=> console.log("Upload complete"));
-
-
-
-
 
         await client.db('fm1').collection('applications').updateOne({email}, {
             $set: {
@@ -194,9 +189,29 @@ export default {
                 mobile,
                 fullName,
                 applicationStatus: ApplicationStates.PENDING_REVIEW,
+                school,
+                musicGenre,
                 artistsList: process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename
             }
         }, {upsert: true});
+
+        const smtpClient = new SMTPClient({
+            user: process.env.SMTP_USERNAME,
+            password: process.env.SMTP_PASSWORD,
+            host: process.env.SMTP_HOST,
+            ssl: true,
+            timeout: 999999999999999999
+        });
+
+        // if(process.env.NODE_ENV != "development")
+            smtpClient.send({
+                text: `Ονοματεπώνυμο: ${fullName}\nEmail: ${email}\nΚινητό: ${mobile}\nΣχολή: ${school}\nΕίδος: ${musicGenre}\nΛίστα: ${process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename}\nΏρα επεξεργασίας αιτήματος: ${new Date()}`,
+                //@ts-ignore
+                from: 'FM1 <noreply@poiw.org>',
+                to: "studiofm1@protonmail.com",
+                subject: 'Νέα αίτηση υποψήφιου παραγωγού',
+            }, async (err, message) => console.log(err));
+
         return response.status(200).send("OK");
     },
 
