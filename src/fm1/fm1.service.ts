@@ -8,6 +8,7 @@ import {ApplicationStates} from "./applicationStates";
 
 import { HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
+import {log} from "util";
 
 const code_generator = customAlphabet('0123456789', 6);
 const token_generator = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 128);
@@ -155,8 +156,11 @@ export default {
         if(!token || token !== authData.token || Date.now() - authData.token_ts > token_expires)
             return 'Το token δεν είναι έγκυρο.';
 
-        let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0]
-        let filename = filename_generator() + '.' + contentType?.split('/')[1]
+        let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0];
+        let fileType = artistsList.split(',')[0].split(':')[0];
+        console.log(contentType)
+        if(fileType != "pdf" || contentType != "application/pdf") return response.status(HttpStatus.NOT_ACCEPTABLE).send('Η λίστα που θα ανεβάσεις, πρέπει υποχρεωτικά να είναι σε μορφή pdf!');
+        let filename = filename_generator() + '.' + fileType
 
         // let fileURL = await uploadAndGetPublicFile(filename,artistsList.split(',')[1],contentType);
         const storage = new Storage(process.env.NODE_ENV === "development" ? {
@@ -173,6 +177,7 @@ export default {
         const base64EncodedString = artistsList.replace(/^data:\w+\/\w+;base64,/, '')
         var bufferStream = new stream.PassThrough();
         bufferStream.end(Buffer.from(base64EncodedString, 'base64'));
+        console.log(filename)
         await bufferStream.pipe(file.createWriteStream({
             metadata: {
                 contentType: contentType,
@@ -203,7 +208,7 @@ export default {
             timeout: 999999999999999999
         });
 
-        // if(process.env.NODE_ENV != "development")
+        if(process.env.NODE_ENV != "development")
             smtpClient.send({
                 text: `Ονοματεπώνυμο: ${fullName}\nEmail: ${email}\nΚινητό: ${mobile}\nΣχολή: ${school}\nΕίδος: ${musicGenre}\nΛίστα: ${process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename}\nΏρα επεξεργασίας αιτήματος: ${new Date()}`,
                 //@ts-ignore
