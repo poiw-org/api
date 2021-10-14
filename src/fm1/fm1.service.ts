@@ -1,13 +1,13 @@
-import client from '../providers/mongo.providers';
-import {customAlphabet} from 'nanoid';
+import * as stream from "stream";
+
+import {ApplicationStates} from "./applicationStates";
+import { HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 import {SMTPClient} from "emailjs"
 // import {uploadAndGetPublicFile} from "../providers/storage"
 import {Storage} from "@google-cloud/storage";
-import * as stream from "stream";
-import {ApplicationStates} from "./applicationStates";
-
-import { HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
+import client from '../providers/mongo.providers';
+import {customAlphabet} from 'nanoid';
 import {log} from "util";
 
 const code_generator = customAlphabet('0123456789', 6);
@@ -213,7 +213,7 @@ export default {
                 text: `Ονοματεπώνυμο: ${fullName}\nEmail: ${email}\nΚινητό: ${mobile}\nΣχολή: ${school}\nΕίδος: ${musicGenre}\nΛίστα: ${process.env.GCS_STORAGE_URL + "fm1-applicants/" + filename}\nΏρα επεξεργασίας αιτήματος: ${new Date()}`,
                 //@ts-ignore
                 from: 'FM1 <noreply@poiw.org>',
-                to: "studiofm1@protonmail.com",
+                to: "studiofm1@outlook.com",
                 subject: 'Νέα αίτηση υποψήφιου παραγωγού',
             }, async (err, message) => console.log(err));
 
