@@ -131,6 +131,13 @@ export default {
 
     async apply(token: string, application: any, response: Response): Promise<Response | string> {
         await client.connect();
+        const smtpClient = new SMTPClient({
+            user: process.env.SMTP_USERNAME,
+            password: process.env.SMTP_PASSWORD,
+            host: process.env.SMTP_HOST,
+            ssl: true,
+            timeout: 999999999999999999
+        });
 
         let email = application.email
         let mobile = application.mobile;
@@ -159,7 +166,16 @@ export default {
         let contentType = artistsList.split(',')[0].split(':')[1]?.split(';')[0];
         let fileType = artistsList.split(',')[0].split(':')[0];
         console.log(contentType)
-        if(fileType != "pdf" || contentType != "application/pdf") return response.status(HttpStatus.NOT_ACCEPTABLE).send('Η λίστα που θα ανεβάσεις, πρέπει υποχρεωτικά να είναι σε μορφή pdf!');
+        if(fileType != "pdf" || contentType != "application/pdf"){
+            smtpClient.send({
+                text: `ΕΛΛΙΠΗΣ ΑΙΤΗΣΗ - ΕΛΛΙΠΗΣ ΑΙΤΗΣΗ - ΕΛΛΙΠΗΣ ΑΙΤΗΣΗ \n\nΟνοματεπώνυμο: ${fullName}\nEmail: ${email}\nΚινητό: ${mobile}\nΣχολή: ${school}\nΕίδος: ${musicGenre}\n\nΏρα επεξεργασίας αιτήματος: ${new Date()}`,
+                //@ts-ignore
+                from: 'FM1 <noreply@poiw.org>',
+                to: "studiofm1@outlook.com",
+                subject: 'ΕΛΛΙΠΗΣ ΑΙΤΗΣΗ - Νέα αίτηση υποψήφιου παραγωγού',
+            }, async (err, message) => console.log(err));
+            return response.status(HttpStatus.NOT_ACCEPTABLE).send('Η λίστα που θα ανεβάσεις, πρέπει υποχρεωτικά να είναι σε μορφή pdf!');
+        }
         let filename = filename_generator() + '.' + fileType
 
         // let fileURL = await uploadAndGetPublicFile(filename,artistsList.split(',')[1],contentType);
@@ -200,13 +216,7 @@ export default {
             }
         }, {upsert: true});
 
-        const smtpClient = new SMTPClient({
-            user: process.env.SMTP_USERNAME,
-            password: process.env.SMTP_PASSWORD,
-            host: process.env.SMTP_HOST,
-            ssl: true,
-            timeout: 999999999999999999
-        });
+
 
         if(process.env.NODE_ENV != "development")
             smtpClient.send({
