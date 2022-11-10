@@ -75,6 +75,14 @@ export class DooraController {
         return await DooraService.getAll() as any;
     }
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post('/authCheck')
+    async authCheck(@Req() request): Promise<boolean> {
+        const user = await checkPermissions(request, ['warehouse']);
+        return !!user;
+    }
+
+
     // @UseGuards(AuthGuard('jwt'))
     // @Get('/key/:id')
     // async findKey(@Req() request, @Param("id") id): Promise<object[] | string> {
