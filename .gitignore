@@ -37,3 +37,7 @@ lerna-debug.log*
 
 ./pnpm-lock.yaml
 poiw-290908-c8bd5b74fe42.json
+
+build/
+
+firestore.creds.json

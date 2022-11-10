@@ -1,9 +1,22 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import * as dotenv from "dotenv";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
+import * as admin from 'firebase-admin';
 import * as bodyParser from 'body-parser';
+import * as dotenv from "dotenv";
+import * as fireorm from 'fireorm';
+
+import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core';
+
+const serviceAccount = true ? JSON.parse(Buffer.from(process.env.FIREBASE, 'base64').toString("ascii")) : require('../firestore.creds.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+});
+
+const firestore = admin.firestore();
+fireorm.initialize(firestore);
 
 dotenv.config()
 

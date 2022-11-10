@@ -16,12 +16,15 @@ export default async (
       },
     },
   );
+
   if(allowed.length > 0){
     if (
         (data['https://poiw:eu:auth0:com/roles']?.filter((role) =>
             allowed.includes(role),
         )).length === 0
-    ) return;
+    ){
+      return;
+    }
   }
-  else return detailed ? data : data['https://poiw:eu:auth0:com/app_metadata']?.username || data.email;;
+    return detailed ? data : data['https://poiw:eu:auth0:com/app_metadata']?.username || data.email;
 };
