@@ -1,11 +1,12 @@
-FROM node:12-slim
+FROM node:lts-bullseye
 
 WORKDIR /usr/src/app
 
 COPY . .
 
-RUN npm install
-RUN npm run build
+RUN yarn install
+RUN yarn build
 
+ENV HOST 0.0.0.0
 
 CMD [ "yarn", "start:prod" ]
