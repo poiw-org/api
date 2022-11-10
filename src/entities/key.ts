@@ -67,9 +67,9 @@ export default class Key {
         return {
             ...key,
             jwt: jwt.sign({
-                id: key.id,
-                user: key.user,
-                serialNumber: key.serialNumber,
+                jti: key.id,
+                sub: key.user,
+                aud: key.serialNumber,
                 exp: key.expiresAt,
                 nbf: key.notBefore,
                 iat: key.issuedAt,
@@ -98,6 +98,11 @@ export default class Key {
     static async findById(id: string): Promise<Key>{
         let repo = Key.getRepo();
         return await repo.findById(id);
+    }
+
+    static async findBySerialNumber(serialNumber: string): Promise<Key>{
+        let repo = Key.getRepo();
+        return await repo.whereEqualTo("serialNumber", serialNumber).findOne();
     }
 
     static async getAll(): Promise<Key[]>{

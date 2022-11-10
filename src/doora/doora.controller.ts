@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import checkPermissions from '../authz/checkPermissions';
 import DooraService  from './doora.service';
@@ -8,10 +8,13 @@ export class DooraController {
 
     @UseGuards(AuthGuard('jwt'))
     @Get('/key')
-    async findKey(@Req() request, @Query("id") id): Promise<object[] | string> {
+    async findKey(@Req() request, @Query("id") id, @Query("serialNumber") serialNumber): Promise<object[] | string> {
         const user = await checkPermissions(request, ['warehouse']);
         if (!user) return 'Unauthorized';
-        return await DooraService.findKeyById(id) as any;
+
+        if(id) return await DooraService.findKeyById(id) as any;
+        else if(serialNumber) return await DooraService.findKeyBySerialNumber(serialNumber) as any;
+        else throw BadRequestException;
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -21,6 +24,9 @@ export class DooraController {
         if (!_user) return 'Unauthorized';
 
         let {user, serialNumber, expiresAt, notBefore} = body;
+
+        if(!user || !serialNumber || !expiresAt || !notBefore) throw BadRequestException;
+
         return await DooraService.createKey(user, serialNumber, expiresAt, notBefore, _user) as any;
     }
 
@@ -31,6 +37,7 @@ export class DooraController {
         if (!_user) return 'Unauthorized';
 
         let {id, expiresAt, notBefore} = body;
+        if(!id || !expiresAt || !notBefore) throw BadRequestException;
 
         return await DooraService.renewKey(id, expiresAt, notBefore) as any;
     }
@@ -42,6 +49,7 @@ export class DooraController {
         if (!_user) return 'Unauthorized';
 
         let {id} = body;
+        if(!id) throw BadRequestException;
 
         return await DooraService.disableKey(id) as any;
     }
@@ -53,6 +61,7 @@ export class DooraController {
         if (!_user) return 'Unauthorized';
 
         let {id} = body;
+        if(!id) throw BadRequestException;
 
         return await DooraService.enableKey(id) as any;
     }
@@ -62,6 +71,8 @@ export class DooraController {
     async deleteKey(@Req() request, @Query("id") id): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
         if (!_user) return 'Unauthorized';
+
+        if(!id) throw BadRequestException;
 
         return await DooraService.deleteKey(id) as any;
     }

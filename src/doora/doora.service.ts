@@ -8,6 +8,11 @@ export default {
         if(!key) throw new NotFoundException();
         return key.toJSON()
     },
+    async findKeyBySerialNumber(serialNumber: string){
+        const key = await Key.findBySerialNumber(serialNumber);
+        if(!key) throw new NotFoundException();
+        return key.toJSON()
+    },
     async getAll(){
         const keys = await Key.getAll();
         return Array.from(keys).map(key => key.toJSON());
