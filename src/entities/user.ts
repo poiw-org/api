@@ -1,48 +1,60 @@
-import {DonationCycle} from "./donationCycle";
 import {AccountStatus} from "./accountStatus";
+import {DonationCycle} from "./donationCycle";
+import { ManagementClient } from "auth0";
+
+const auth0 = new ManagementClient({
+    domain: process.env.AUTH0_DOMAIN,
+    clientId: process.env.AUTH0_CLIENT_ID,
+    clientSecret: process.env.AUTH0_CLIENT_SECRET,
+    scope: 'read:users',
+  });
 
 export default class User{
-    //Basic data
-    declare fullName: string|undefined;
     declare email: string;
-    declare status: AccountStatus;
+    declare id;
 
-    // Donations
-    declare donationCycle: DonationCycle
-    declare balance: number;
-    declare exemptFromDonations: boolean;
 
-    //Discord
-    declare discordID: string|undefined;
-    declare exemptFromDiscord: boolean;
-
-    constructor(fullName: string|undefined, email: string, status: AccountStatus, donationCycle: DonationCycle, balance: number, exemptFromDonations: boolean, discordID: string|undefined, exemptFromDiscord: boolean) {
-        this.fullName = fullName;
-        this.email = email;
-        this.status = status;
-
-        this.donationCycle = donationCycle;
-        this.balance = balance;
-        this.exemptFromDonations = exemptFromDonations;
-
-        this.discordID = discordID;
-        this.exemptFromDiscord = exemptFromDiscord;
-    }
-    static fromJSON(json: any): User{
-        return new User(json!.fullName, json!.email, json!.status, json!.donationCycle, json!.balance, json!.exemptFromDonations, json!.discordID, json!.exemptFromDiscord)
+    constructor(email: string, id: string){
+        this.email = email
+        this.id = id
     }
 
-    toJSON(): any{
+    toJSON(){
         return {
-            fullName: this.fullName || undefined,
             email: this.email,
-            status: this.status,
-            donationCycle: this.donationCycle,
-            balance: this.balance,
-            exemptFromDonations: this.exemptFromDonations,
-            discordID: this.discordID || undefined,
-            exemptFromDiscord: this.exemptFromDiscord
+            id: this.id,
         }
+    }
+
+    static fromJSON(json: any){
+        return new User(json.email, json.id)
+    }
+
+    static async findByEmail(email: string): Promise<User>{
+        let users = await auth0.getUsers();
+        let user = users.find(user => user.email == email);
+
+        if(user){
+            return new User(user.email, user.user_id);
+        }
+
+        return null;
+    }
+
+    static async findById(id: string): Promise<User>{
+        let users = await auth0.getUsers();
+        let user = users.find(user => user.user_id == id);
+
+        if(user){
+            return new User(user.email, user.user_id);
+        }
+
+        return null;
+    }
+
+    static async getAll(){
+        let users = await auth0.getUsers();
+        return users.map(user => new User(user.email, user.user_id))
     }
 
 }

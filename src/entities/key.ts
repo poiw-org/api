@@ -2,15 +2,19 @@ import * as jwt from "jsonwebtoken";
 
 import {Collection, EntityConstructorOrPath, getRepository} from 'fireorm';
 
+import User from "./user";
 import { nanoid } from 'nanoid';
 
 let getTimestamp = (date: Date): number =>{
-    return Math.floor(new Date(date).getTime())
+    return Math.floor(new Date(date).getTime() / 1000) // In the Arduino, the timestamp is stored in a 32bit unsigned long. So there is not enough space.
 }
 @Collection()
 export default class Key {
     id: string;
-    user: string;
+    user: {
+        id: string;
+        email: string;
+    };
     serialNumber: string;
     expiresAt: Date;
     issuedAt: Date;
@@ -56,9 +60,9 @@ export default class Key {
         let key = {
             id: this.id,
             user: this.user,
-            expiresAt: getTimestamp(this.expiresAt),
-            issuedAt: getTimestamp(this.issuedAt),
-            notBefore: getTimestamp(this.notBefore),
+            expiresAt: this.expiresAt,
+            issuedAt: this.issuedAt,
+            notBefore: this.notBefore,
             issuedBy: this.issuedBy,
             disabled: this.disabled,
             serialNumber: this.serialNumber
@@ -67,18 +71,18 @@ export default class Key {
         return {
             ...key,
             jwt: jwt.sign({
-                jti: key.id,
-                sub: key.user,
-                aud: key.serialNumber,
-                exp: key.expiresAt,
-                nbf: key.notBefore,
-                iat: key.issuedAt,
-                iss: key.issuedBy,
+                jti: this.id,
+                sub: this.user.id,
+                aud: this.serialNumber,
+                exp: getTimestamp(this.expiresAt),
+                nbf: getTimestamp(this.notBefore),
+                iat: getTimestamp(this.issuedAt),
+                iss: this.issuedBy,
             }, process.env.JWT_SIGNING_KEY)
         }
     }
 
-    static async create(user: string, serialNumber: string, expiresAt: Date, notBefore: Date, issuedBy: string) {
+    static async create(user: any, serialNumber: string, expiresAt: Date, notBefore: Date, issuedBy: string) {
         let key = new Key();
         key.id = nanoid(16);
         key.user = user;

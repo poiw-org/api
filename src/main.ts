@@ -12,7 +12,7 @@ const serviceAccount = true ? JSON.parse(Buffer.from(process.env.FIREBASE, 'base
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
 });
 
 const firestore = admin.firestore();
