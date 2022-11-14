@@ -38,6 +38,7 @@
     "emailjs": "4.0.1",
     "firebase-admin": "^11.2.0",
     "fireorm": "^0.23.3",
+    "ioredis": "^5.2.4",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^3.0.0",
     "lodash": "^4.17.21",
