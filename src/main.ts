@@ -5,6 +5,8 @@ import * as bodyParser from 'body-parser';
 import * as dotenv from "dotenv";
 import * as fireorm from 'fireorm';
 
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 import { AppModule } from './app.module';
 import { NestFactory } from '@nestjs/core';
 
@@ -26,8 +28,16 @@ async function bootstrap() {
     dsn: 'https://3dc4e319b9d4418ea396973c12c0d25c@o350531.ingest.sentry.io/5916736',
   });
   app.enableCors();
-  app.use(bodyParser.json({limit: '50mb'}));
-  app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
+
+  const config = new DocumentBuilder()
+  .setTitle('po/iw API')
+  .setDescription('po/iw hackerspace API')
+  .setVersion('1.0')
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+
+SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT || 3001);
 }

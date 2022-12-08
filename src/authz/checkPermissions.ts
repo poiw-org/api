@@ -25,12 +25,14 @@ export default async (
 ): Promise<string | any | undefined> => {
 
   let processRoles = (roles) => {
+    console.log(roles);
 
-    if(allowed.length > 0){
+
+    if(allowed?.length > 0){
       if (
           (roles['https://poiw:eu:auth0:com/roles']?.filter((role) =>
-              allowed.includes(role),
-          )).length === 0
+              allowed?.includes(role),
+          ))?.length === 0
       ){
         return;
       }
