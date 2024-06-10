@@ -1,11 +1,11 @@
-FROM node:lts-bullseye
+FROM node:20-alpine
 
 WORKDIR /usr/src/app
 
 COPY . .
 
-RUN yarn install
-RUN yarn build
+RUN npm install
+RUN npm run build
 
 ENV HOST 0.0.0.0
 

@@ -1,8 +1,5 @@
 import * as jwt from "jsonwebtoken";
-
 import {Collection, EntityConstructorOrPath, getRepository} from 'fireorm';
-
-import User from "./user";
 import { nanoid } from 'nanoid';
 
 let getTimestamp = (date: Date): number =>{

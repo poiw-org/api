@@ -1,12 +1,29 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
+    Req,
+    UnauthorizedException,
+    UseGuards,
+    UseInterceptors,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import checkPermissions from '../authz/checkPermissions';
 import DooraService  from './doora.service';
+import { AuthInterceptor } from '../interceptors/auth/auth.interceptor';
+import { RequiredPermissions } from '../auth/required-permissions/required-permissions.decorator';
 
+@UseInterceptors(AuthInterceptor)
 @Controller('doora')
 export class DooraController {
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Get('/key')
     async findKey(@Req() request, @Query("id") id, @Query("serialNumber") serialNumber): Promise<object[] | string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -17,7 +34,7 @@ export class DooraController {
         else throw new BadRequestException();
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Post('/key')
     async createKey(@Req() request, @Body() body): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
@@ -30,7 +47,7 @@ export class DooraController {
         return await DooraService.createKey(user, serialNumber, expiresAt, notBefore, _user) as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Patch('/key/renew')
     async renewKey(@Req() request, @Body() body): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
@@ -42,7 +59,7 @@ export class DooraController {
         return await DooraService.renewKey(id, expiresAt, notBefore) as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Patch('/key/disable')
     async disableKey(@Req() request, @Body() body): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
@@ -54,7 +71,7 @@ export class DooraController {
         return await DooraService.disableKey(id) as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Patch('/key/enable')
     async enableKey(@Req() request, @Body() body): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
@@ -66,7 +83,7 @@ export class DooraController {
         return await DooraService.enableKey(id) as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Delete('/key')
     async deleteKey(@Req() request, @Query("id") id): Promise<object[] | string> {
         const _user = await checkPermissions(request, ['warehouse']);
@@ -77,7 +94,7 @@ export class DooraController {
         return await DooraService.deleteKey(id) as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Get('/keys')
     async getAll(@Req() request): Promise<object[] | string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -86,7 +103,7 @@ export class DooraController {
         return await DooraService.getAll() as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Post('/authCheck')
     async authCheck(@Req() request): Promise<boolean> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -94,7 +111,7 @@ export class DooraController {
     }
 
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Get('/forceOpen')
     async forceOpen(@Req() request): Promise<void> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -103,7 +120,7 @@ export class DooraController {
         return await DooraService.forceOpen() as any;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('doora:admin')
     @Get('/entries')
     async getEntriesByKey(@Req() request, @Query("id") id): Promise<void> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -111,7 +128,8 @@ export class DooraController {
 
         return await DooraService.getEntriesByKey(id) as any;
     }
-    @UseGuards(AuthGuard('jwt'))
+
+    @RequiredPermissions('doora:admin')
     @Get('/users')
     async getUsers(@Req() request): Promise<object[] | string> {
         const user = await checkPermissions(request, ['warehouse']);

@@ -9,32 +9,36 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import Service from './app.service';
 import { UseInterceptors } from '@nestjs/common';
 import { SentryInterceptor } from './sentry.interceptor';
 import checkPermissions from './authz/checkPermissions';
+import { AuthInterceptor } from './interceptors/auth/auth.interceptor';
+import { RequiredPermissions } from './auth/required-permissions/required-permissions.decorator';
+import { IsPublic } from './auth/is-public/is-public.decorator';
 
-@UseInterceptors(SentryInterceptor)
+@UseInterceptors(SentryInterceptor, AuthInterceptor)
 @Controller('warehouse')
 export class AppController {
-
+    @IsPublic()
     @Get('/latest')
     async getLatestItems(): Promise<object> {
         return await Service.getLatestItems();
     }
 
+    @IsPublic()
     @Get('/items/:id')
     async getItem(@Param('id') id): Promise<object> {
         return await Service.getById(id);
     }
 
+    @IsPublic()
     @Post('/search')
     async searchItems(@Body() body): Promise<object[]> {
         return await Service.searchItems(body.query, body.shelf);
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Post('/items')
     async createItem(@Body() body, @Req() request): Promise<boolean | string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -43,7 +47,7 @@ export class AppController {
         return await Service.createItem(body);
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Patch('/items')
     async updateItem(@Body() body, @Req() request): Promise<boolean | string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -52,7 +56,7 @@ export class AppController {
         return await Service.updateItem(body);
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Delete('/items')
     async deleteItem(@Body() body, @Req() request): Promise<boolean> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -61,7 +65,7 @@ export class AppController {
         return await Service.deleteItem(body);
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Delete('/checkOut')
     async checkOut(@Body() body, @Req() request): Promise<boolean | string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -71,14 +75,14 @@ export class AppController {
         return await Service.checkOut(body);
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Post('/authCheck')
     async authCheck(@Req() request): Promise<boolean> {
         const user = await checkPermissions(request, ['warehouse']);
         return !!user;
     }
 
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Get('/barcode')
     async getUnusedBarcode(@Req() request): Promise<string> {
         const user = await checkPermissions(request, ['warehouse']);
@@ -86,7 +90,7 @@ export class AppController {
 
         return await Service.getUnusedBarcode();
     }
-    @UseGuards(AuthGuard('jwt'))
+    @RequiredPermissions('warehouse:admin')
     @Get('/batch')
     async getUnusedBarcodeBatch(@Req() request): Promise<string[] | string> {
         const user = await checkPermissions(request, ['warehouse']);

@@ -1,7 +1,6 @@
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 import * as admin from 'firebase-admin';
-import * as bodyParser from 'body-parser';
 import * as dotenv from "dotenv";
 import * as fireorm from 'fireorm';
 

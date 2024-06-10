@@ -1,13 +1,11 @@
-import {AccountStatus} from "./accountStatus";
-import {DonationCycle} from "./donationCycle";
 import { ManagementClient } from "auth0";
 
 const auth0 = new ManagementClient({
     domain: process.env.AUTH0_DOMAIN,
     clientId: process.env.AUTH0_CLIENT_ID,
     clientSecret: process.env.AUTH0_CLIENT_SECRET,
-    scope: 'read:users',
-  });
+});
+
 
 export default class User{
     declare email: string;
@@ -31,8 +29,8 @@ export default class User{
     }
 
     static async findByEmail(email: string): Promise<User>{
-        let users = await auth0.getUsers();
-        let user = users.find(user => user.email == email);
+        let users = await auth0.users.getAll();
+        let user = users.data.find(user => user.email == email);
 
         if(user){
             return new User(user.email, user.user_id);
@@ -42,19 +40,20 @@ export default class User{
     }
 
     static async findById(id: string): Promise<User>{
-        let users = await auth0.getUsers();
-        let user = users.find(user => user.user_id == id);
+        let user = await auth0.users.get({
+            id: id
+        })
 
         if(user){
-            return new User(user.email, user.user_id);
+            return new User(user.data.email, user.data.user_id);
         }
 
         return null;
     }
 
     static async getAll(){
-        let users = await auth0.getUsers();
-        return users.map(user => new User(user.email, user.user_id))
+        let users = await auth0.users.getAll();
+        return users.data.map(user => new User(user.email, user.user_id))
     }
 
 }
